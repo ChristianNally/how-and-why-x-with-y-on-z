@@ -1,12 +1,15 @@
 import './App.css';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// Import a style of your choice
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useState, useEffect } from 'react';
 
 function App() {
 
 	// default code_snippets
 	const default_task = 'object_detection';
-	const default_stack = 'tensorflow';
-	const default_framework = 'flask';
+	const default_stack = 'pytorch';
+	const default_framework = 'fastapi';
 	const default_deployment = 'aws';
 
 	// each key is formed from the value of the task, stack, framework, and deployment
@@ -18,6 +21,13 @@ function App() {
 			"framework": "flask",
 			"deployment": "aws",
 			"code": "import tensorflow as tf\nfrom flask import Flask, request\napp = Flask(__name__)\""
+		},
+		'object_detection-pytorch-fastapi-aws' : {
+			"task": "object_detection",
+			"stack": "pytorch",
+			"framework": "fastapi",
+			"deployment": "aws",
+			"code": "object_detection-pytorch-fastapi.txt"
 		},
 		'image_classification-tensorflow-flask-gcp': {
 			"task": "image_classification",
@@ -46,7 +56,7 @@ function App() {
 	const [stack, setStack] = useState(default_stack);
 	const [framework, setFramework] = useState(default_framework);
 	const [deployment, setDeployment] = useState(default_deployment);
-	const [code, setCode] = useState(code_snippets[`${default_task}-${default_stack}-${default_framework}-${default_deployment}`]); 	// state to hold the code snippet
+	const [code, setCode] = useState(''); 	// state to hold the code snippet
 
 	const handle = (e) => {
 		const name = e.target.name; 		// get the name of the select element
@@ -72,19 +82,37 @@ function App() {
 		}
 	};
 
-	// update the code snippet when the state changes
-	useEffect(() => {
-		console.log(`Current state: task=${task}, stack=${stack}, framework=${framework}, deployment=${deployment}`);
-		let code = code_snippets[`${task}-${stack}-${framework}-${deployment}`];
-		if (code) {
-			setCode(code);
-		} else {
-			setCode('n/a');
-		}
-	}, [task, stack, framework, deployment]);
+// update the code snippet when the state changes
+useEffect(() => {
+  const snippetKey = `${task}-${stack}-${framework}-${deployment}`;
+  const snippet = code_snippets[snippetKey];
+	console.log('snippet', snippet);
+
+  // Check if the code snippet is a file name (ends with '.txt') or direct code
+  if (snippet && snippet.code.endsWith('.txt')) {
+    // It's a file name, fetch its contents
+    fetch(`/code_samples/${snippet.code}`)
+      .then(response => response.text()) // Convert the readable stream to text
+      .then(text => {
+        setCode(text); // Update the code state with the fetched text
+      })
+      .catch(error => {
+        console.error('Error fetching code:', error);
+        setCode('Error loading code snippet.');
+      });
+  } else {
+    // It's direct code, set it directly
+    // setCode(snippet.code); // Update the code state with the direct code
+		console.log('not a text file');
+		setCode('no text file');
+	}
+}, [task, stack, framework, deployment]); // Dependency array
+
 
   return (
     <div className="App">
+		<h1>HoWXYZ</h1>
+		<h3>How and Why do X with Y on Z</h3>
       <header className="App-header">
 				<label htmlFor="task">Task</label>
 				<select id="tast" name="task" onChange={handle}>
@@ -117,11 +145,9 @@ function App() {
 				</select>
       </header>
       <article>
-				<pre>
-					<code>
-						{code.code}
-					</code>
-				</pre>
+				<SyntaxHighlighter language="python" style={dark}>
+          {code}
+        </SyntaxHighlighter>
       </article>
     </div>
   );
